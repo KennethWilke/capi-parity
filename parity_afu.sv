@@ -14,15 +14,33 @@ module parity_afu (
   input MMIOInterfaceInput mmio_in,
   output MMIOInterfaceOutput mmio_out);
 
+  logic jdone;
+
   assign timebase_request = 0,
     parity_enabled = 1,
-    job_out.yield = 0;
+    job_out.yield = 0,
+    buffer_out.read_latency = 1;
+
+  shift_register jdone_shift(
+    .clock(clock),
+    .in(jdone),
+    .out(job_out.done));
 
   always_ff @(posedge clock) begin
-    $display("Clock!");
-    job_out.running <= 0;
-    job_out.done <= 0;
-    buffer_out <= 0;
+    if(job_in.valid) begin
+      case(job_in.command)
+        RESET: begin
+          $display("Reset");
+          jdone <= 1;
+        end
+        START: begin
+          $display("Start");
+          jdone <= 0;
+        end
+      endcase
+    end else begin
+      jdone <= 0;
+    end
   end
 
 endmodule

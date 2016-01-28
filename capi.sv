@@ -1,9 +1,10 @@
 package CAPI;
   typedef longint unsigned pointer_t;
+  typedef enum byte {RESET=8'h80, START=8'h90} job_command_t;
 
   typedef struct packed {
     bit valid;
-    byte command;
+    job_command_t command;
     bit command_parity;
     pointer_t address;
     bit address_parity;
