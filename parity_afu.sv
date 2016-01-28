@@ -18,8 +18,7 @@ module parity_afu (
 
   assign timebase_request = 0,
     parity_enabled = 1,
-    job_out.yield = 0,
-    buffer_out.read_latency = 1;
+    job_out.yield = 0;
 
   shift_register jdone_shift(
     .clock(clock),
@@ -30,6 +29,17 @@ module parity_afu (
     .clock(clock),
     .mmio_in(mmio_in),
     .mmio_out(mmio_out));
+
+  parity_workelement workelement(
+    .clock(clock),
+    .enable(job_out.running),
+    .reset(job_out.done),
+    .job_in(job_in),
+    .command_in(command_in),
+    .command_out(command_out),
+    .buffer_in(buffer_in),
+    .buffer_out(buffer_out),
+    .response(response));
 
   always_ff @(posedge clock) begin
     if(job_in.valid) begin
