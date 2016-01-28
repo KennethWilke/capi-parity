@@ -1,0 +1,16 @@
+capi-parity.qpf
+db/
+incremental_db/
+output_files/
+simulation/modelsim/modelsim.ini
+simulation/modelsim/msim_transcript
+simulation/modelsim/rtl_work/
+simulation/modelsim/top_run_msim_rtl_verilog.do*
+simulation/modelsim/wlft*
+simulation/modelsim/vsim.wlf
+top.qsf
+top_nativelink_simulation.rpt
+tinker
+simulation/modelsim/top.sft
+simulation/modelsim/top.vho
+simulation/modelsim/top_modelsim.xrf
