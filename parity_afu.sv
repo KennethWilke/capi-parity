@@ -26,15 +26,22 @@ module parity_afu (
     .in(jdone),
     .out(job_out.done));
 
+  mmio mmio_handler(
+    .clock(clock),
+    .mmio_in(mmio_in),
+    .mmio_out(mmio_out));
+
   always_ff @(posedge clock) begin
     if(job_in.valid) begin
       case(job_in.command)
         RESET: begin
           $display("Reset");
+          job_out.running <= 0;
           jdone <= 1;
         end
         START: begin
           $display("Start");
+          job_out.running <= 1;
           jdone <= 0;
         end
       endcase

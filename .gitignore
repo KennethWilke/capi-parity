@@ -10,7 +10,7 @@ simulation/modelsim/wlft*
 simulation/modelsim/vsim.wlf
 top.qsf
 top_nativelink_simulation.rpt
-tinker
+capi-parity
 simulation/modelsim/top.sft
 simulation/modelsim/top.vho
 simulation/modelsim/top_modelsim.xrf
