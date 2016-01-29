@@ -1,5 +1,10 @@
 import CAPI::*;
 
+function logic [0:63] swap_endianness(logic [0:63] in);
+  return {in[56:63], in[48:55], in[40:47], in[32:39], in[24:31], in[16:23],
+          in[8:15], in[0:7]};
+endfunction
+
 module parity_workelement (
   input clock,
   input enable,
@@ -43,38 +48,10 @@ module parity_workelement (
       end else if (wed_requested & !wed_received & buffer_in.write_valid) begin
         $display("Got WED buffer");
         // Swizzle all these inputs into big-endian byte order
-        buffer_size <= {buffer_in.write_data[56:63],
-                        buffer_in.write_data[48:55],
-                        buffer_in.write_data[40:47],
-                        buffer_in.write_data[32:39],
-                        buffer_in.write_data[24:31],
-                        buffer_in.write_data[16:23],
-                        buffer_in.write_data[8:15],
-                        buffer_in.write_data[0:7]};
-        stripe1_addr <= {buffer_in.write_data[120:127],
-                         buffer_in.write_data[112:119],
-                         buffer_in.write_data[104:111],
-                         buffer_in.write_data[96:103],
-                         buffer_in.write_data[88:95],
-                         buffer_in.write_data[80:87],
-                         buffer_in.write_data[72:79],
-                         buffer_in.write_data[64:71]};
-        stripe2_addr <= {buffer_in.write_data[184:191],
-                         buffer_in.write_data[176:183],
-                         buffer_in.write_data[168:175],
-                         buffer_in.write_data[160:167],
-                         buffer_in.write_data[152:159],
-                         buffer_in.write_data[144:151],
-                         buffer_in.write_data[136:143],
-                         buffer_in.write_data[128:135]};
-        parity_addr <= {buffer_in.write_data[248:255],
-                        buffer_in.write_data[240:247],
-                        buffer_in.write_data[232:239],
-                        buffer_in.write_data[224:231],
-                        buffer_in.write_data[216:223],
-                        buffer_in.write_data[208:215],
-                        buffer_in.write_data[200:207],
-                        buffer_in.write_data[192:199]};
+        buffer_size <= swap_endianness(buffer_in.write_data[0:63]);
+        stripe1_addr <= swap_endianness(buffer_in.write_data[64:127]);
+        stripe2_addr <= swap_endianness(buffer_in.write_data[128:191]);
+        parity_addr <= swap_endianness(buffer_in.write_data[192:255]);
         wed_received <= 1;
         command_out.address <= stripe1_addr;
         command_out.valid <= 0;
