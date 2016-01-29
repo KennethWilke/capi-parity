@@ -1,6 +1,39 @@
 package CAPI;
   typedef longint unsigned pointer_t;
-  typedef enum byte {RESET=8'h80, START=8'h90} job_command_t;
+
+  typedef enum byte {
+    RESET=8'h80,
+    START=8'h90
+  } job_command_t;
+
+  typedef enum bit [0:12] {
+    // Cache-directed commands
+    READ_CL_S=13'h0A50,
+    READ_CL_M=13'h0A60,
+    READ_CL_LCK=13'h0A6B,
+    READ_CL_RES=13'h0A67,
+    TOUCH_I=13'h0240,
+    TOUCH_S=13'h0250,
+    TOUCH_M=13'h0260,
+    WRITE_MI=13'h0D60,
+    WRITE_MS=13'h0D70,
+    WRITE_UNLOCK=13'h0D6B,
+    WRITE_C=13'h0D67,
+    PUSH_I=13'h0140,
+    PUSH_S=13'h0150,
+    EVICT_I=13'h1140,
+    LOCK=13'h016B,
+    UNLOCK=13'h017B,
+    // Commands that don't allocate in PSL cache
+    READ_CL_NA=13'h0A00,
+    READ_PNA=13'h0E00,
+    WRITE_NA=13'h0D00,
+    WRITE_INJ=13'h0D10,
+    // Management commands
+    FLUSH=13'h0100,
+    INTREQ=13'h0000,
+    RESTART=13'h0001
+  } afu_command_t;
 
   typedef struct packed {
     bit valid;
@@ -26,7 +59,7 @@ package CAPI;
     bit valid;
     byte tag;
     bit tag_parity;
-    bit [0:12] command;
+    afu_command_t command;
     bit command_parity;
     bit [0:2] abt;
     pointer_t address;
