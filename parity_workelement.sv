@@ -93,6 +93,7 @@ module parity_workelement (
           if(command_out.tag == REQUEST_READ) begin
             command_out.address <= request.stripe1;
             command_out.tag <= STRIPE1_READ;
+            current_state <= WAITING_FOR_STRIPES;
           end else begin
             command_out.address <= request.stripe2;
             command_out.tag <= STRIPE2_READ;

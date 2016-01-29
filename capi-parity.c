@@ -16,7 +16,7 @@ typedef struct
 void* random_data(__u64 size)
 {
 	__u64 bytes_remaining = size;
-	long int *offset;
+	long long int *offset;
 	void *new = aligned_alloc(ALLOCATION_ALIGNMENT, size);
 
 	if(size % sizeof(long int))
@@ -35,11 +35,13 @@ void* random_data(__u64 size)
 
 	offset = new;
 	// Generate random data
-	while(bytes_remaining > sizeof(long int))
+	while(bytes_remaining > sizeof(long long int))
 	{
-		*offset = random();
+		// Shift to write full 64 bits
+		*offset = (long int)random() << 32;
+		*offset += (long long int)random();
 		offset++;
-		bytes_remaining -= sizeof(long int);
+		bytes_remaining -= sizeof(long long int);
 	}
 
 	return new;
