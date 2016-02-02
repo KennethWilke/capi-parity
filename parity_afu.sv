@@ -17,7 +17,7 @@ module parity_afu (
   logic jdone;
 
   assign timebase_request = 0,
-    parity_enabled = 1,
+    parity_enabled = 0,
     job_out.yield = 0;
 
   shift_register jdone_shift(

@@ -25,7 +25,8 @@ typedef enum logic [0:7] {
   REQUEST_READ,
   STRIPE1_READ,
   STRIPE2_READ,
-  PARITY_WRITE
+  PARITY_WRITE,
+  DONE_WRITE
 } request_tag;
 
 module parity_workelement (
@@ -42,9 +43,10 @@ module parity_workelement (
   state current_state;
   parity_request request;
   longint unsigned offset;
-  logic [0:511] stripe1_data;
-  logic [0:511] stripe2_data;
-  logic [0:511] parity_data;
+  logic [0:1023] stripe1_data;
+  logic [0:1023] stripe2_data;
+  logic [0:1023] parity_data;
+  logic stripe_valid;
 
   assign command_out.abt = 3'b000,
          command_out.context_handle = 0,
@@ -52,7 +54,9 @@ module parity_workelement (
          // Parity bits
          command_out.command_parity = ~^command_out.command,
          command_out.address_parity = ~^command_out.address,
-         command_out.tag_parity = ~^command_out.tag;
+         command_out.tag_parity = ~^command_out.tag,
+         parity_data = stripe1_data ^ stripe2_data,
+         buffer_out.read_parity = ^buffer_out.read_data;
 
   // Runtime logic
   always_ff @ (posedge clock)
@@ -61,16 +65,18 @@ module parity_workelement (
     if (reset) begin
       current_state = START;
       command_out.valid <= 0;
-      command_out.size <= 128;
+      command_out.size <= 0;
       request.size = 0;
       request.stripe1 = 0;
       request.stripe2 = 0;
       request.parity = 0;
       offset <= 0;
+      stripe_valid <= 0;
     // Running logic
     end else if(enable) begin
       case (current_state)
         START: begin
+          command_out.size <= 128;
           command_out.command <= READ_CL_NA;
           command_out.tag <= REQUEST_READ;
           command_out.address <= job_in.address;
@@ -90,10 +96,9 @@ module parity_workelement (
         end
         REQUEST_STRIPES: begin
           command_out.valid <= 1;
-          if(command_out.tag == REQUEST_READ) begin
+          if (command_out.tag == REQUEST_READ) begin
             command_out.address <= request.stripe1;
             command_out.tag <= STRIPE1_READ;
-            current_state <= WAITING_FOR_STRIPES;
           end else begin
             command_out.address <= request.stripe2;
             command_out.tag <= STRIPE2_READ;
@@ -102,7 +107,52 @@ module parity_workelement (
         end
         WAITING_FOR_STRIPES: begin
           command_out.valid <= 0;
-          $display("Waiting for stripe data");
+          if (buffer_in.write_valid) begin
+            case (buffer_in.write_tag)
+              STRIPE1_READ: begin
+                if (buffer_in.write_address == 0) begin
+                  stripe1_data[0:511] <= buffer_in.write_data;
+                end else begin
+                  stripe1_data[512:1023] <= buffer_in.write_data;
+                end
+              end
+              STRIPE2_READ: begin
+                if (buffer_in.write_address == 0) begin
+                  stripe2_data[0:511] <= buffer_in.write_data;
+                end else begin
+                  stripe2_data[512:1023] <= buffer_in.write_data;
+                end
+              end
+            endcase
+          end
+          if (response.valid &
+              (response.tag == STRIPE1_READ |
+               response.tag == STRIPE2_READ)) begin
+            if (stripe_valid) begin
+              current_state <= WRITE_PARITY;
+            end else begin
+              stripe_valid <= 1;
+            end
+          end
+        end
+        WRITE_PARITY: begin
+          $display("Parity!");
+          command_out.command <= WRITE_NA;
+          command_out.size <= 1;
+          command_out.address <= job_in.address + 32;
+          command_out.tag <= PARITY_WRITE;
+          command_out.valid <= 1;
+          buffer_out.read_data[256:263] <= 1;
+          current_state <= DONE;
+        end
+        DONE: begin
+          $display("Done");
+          command_out.valid <= 0;
+          /*if (command_out.tag == DONE_WRITE) begin
+            command_out.valid <= 0;
+          end else begin
+            command_out.valid <= 1;
+          end*/
         end
       endcase
     end
