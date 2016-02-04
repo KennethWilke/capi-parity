@@ -8,6 +8,7 @@ simulation/modelsim/top_run_msim_rtl_verilog.do*
 simulation/modelsim/wlft*
 simulation/modelsim/vsim.wlf
 top.qsf
+top.qws
 top_nativelink_simulation.rpt
 simulation/modelsim/top.sft
 simulation/modelsim/top.vho

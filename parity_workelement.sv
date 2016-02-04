@@ -136,23 +136,33 @@ module parity_workelement (
           end
         end
         WRITE_PARITY: begin
-          $display("Parity!");
-          command_out.command <= WRITE_NA;
-          command_out.size <= 1;
-          command_out.address <= job_in.address + 32;
-          command_out.tag <= PARITY_WRITE;
-          command_out.valid <= 1;
-          buffer_out.read_data[256:263] <= 1;
-          current_state <= DONE;
+          if (command_out.tag == PARITY_WRITE) begin
+            command_out.valid <= 0;
+            if (buffer_in.read_address) begin
+              buffer_out.read_data <= parity_data[0:511];
+            end else begin
+              buffer_out.read_data <= parity_data[512:1023];
+            end
+            if (response.valid && response.tag == PARITY_WRITE)
+              current_state <= DONE;
+          end else begin
+            command_out.command <= WRITE_NA;
+            command_out.size <= 128;
+            command_out.address <= request.parity;
+            command_out.tag <= PARITY_WRITE;
+            command_out.valid <= 1;
+          end
         end
         DONE: begin
           $display("Done");
-          command_out.valid <= 0;
-          /*if (command_out.tag == DONE_WRITE) begin
+          if (command_out.tag == DONE_WRITE) begin
             command_out.valid <= 0;
           end else begin
+            command_out.tag <= DONE_WRITE;
+            command_out.address <= job_in.address + 32;
             command_out.valid <= 1;
-          end*/
+            buffer_out.read_data[256:263] <= 1;
+          end
         end
       endcase
     end
