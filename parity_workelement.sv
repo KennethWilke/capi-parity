@@ -159,6 +159,7 @@ module parity_workelement (
             command_out.valid <= 0;
           end else begin
             command_out.tag <= DONE_WRITE;
+            command_out.size <= 1;
             command_out.address <= job_in.address + 32;
             command_out.valid <= 1;
             buffer_out.read_data[256:263] <= 1;
