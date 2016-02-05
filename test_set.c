@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 		sleep(1);
 	}
 
-	printf("PARITY:\n%s\n", example->parity);
+	printf("PARITY:\n%s\n", (char *)example->parity);
 
 	printf("releasing AFU\n");
 	cxl_afu_free(afu);

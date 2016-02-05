@@ -12,6 +12,9 @@ add wave -position insertpoint -group "Parity Generator" -radix hexadecimal \
 add wave -position insertpoint -group "Parity Generator" -radix hexadecimal \
 	-label "Parity Pointer" sim:/top/a0/svAFU/workelement/request.parity
 
+add wave -position insertpoint -group "Parity Generator" -label "Current Offset" \
+	-radix unsigned sim:/top/a0/svAFU/workelement/offset
+
 add wave -position insertpoint -group "Parity Generator" -label "Stripe1 Data" \
 	sim:/top/a0/svAFU/workelement/stripe1_data
 add wave -position insertpoint -group "Parity Generator" -label "Stripe2 Data" \

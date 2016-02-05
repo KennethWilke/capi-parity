@@ -1,7 +1,28 @@
 #include "capi-parity.h"
 
 #define STRIPE_SIZE 1048576
+//#define STRIPE_SIZE 32768
 
+void validate_parity(parity_request *request)
+{
+	char *stripe1, *stripe2, *parity;
+	stripe1 = request->stripe1;
+	stripe2 = request->stripe2;
+	parity = request->parity;
+	int i;
+
+	for(i = 0; i < request->size; i++)
+	{
+		if(parity[i] != (stripe1[i] ^ stripe2[i]))
+		{
+			printf("Failure at byte %d!\n", i);
+			printf("%02hhx != %02hhx ^ %02hhx\n",
+			       parity[i], stripe1[i], stripe2[i]);
+			return;
+		}
+	}
+	printf("Success!\n");
+}
 
 void* random_data(__u64 size)
 {
@@ -80,6 +101,8 @@ int main(int argc, char *argv[])
 	printf("example->done: %llx\n", example->done);
 	printf("releasing AFU\n");
 	cxl_afu_free(afu);
+
+	validate_parity(example);
 
 	return 0;
 }

@@ -65,15 +65,9 @@ module parity_workelement (
     if (reset) begin
       current_state = START;
       command_out.valid <= 0;
-      command_out.size <= 0;
-      request.size = 0;
-      request.stripe1 = 0;
-      request.stripe2 = 0;
-      request.parity = 0;
-      offset <= 0;
-      stripe_valid <= 0;
     // Running logic
-    end else if(enable) begin
+    end
+    if(enable) begin
       case (current_state)
         START: begin
           command_out.size <= 128;
@@ -82,6 +76,11 @@ module parity_workelement (
           command_out.address <= job_in.address;
           command_out.valid <= 1;
           current_state = WAITING_FOR_REQUEST;
+          request.size <= 0;
+          request.stripe1 <= 0;
+          request.stripe2 <= 0;
+          request.parity <= 0;
+          offset <= 0;
         end
         WAITING_FOR_REQUEST: begin
           command_out.valid <= 0;
@@ -90,17 +89,21 @@ module parity_workelement (
           request.stripe1 <= swap_endianness(buffer_in.write_data[64:127]);
           request.stripe2 <= swap_endianness(buffer_in.write_data[128:191]);
           request.parity <= swap_endianness(buffer_in.write_data[192:255]);
-          if (buffer_in.write_valid & buffer_in.write_tag == REQUEST_READ) begin
+          if (response.valid &
+              (response.tag == REQUEST_READ)) begin
             current_state <= REQUEST_STRIPES;
           end
         end
         REQUEST_STRIPES: begin
           command_out.valid <= 1;
-          if (command_out.tag == REQUEST_READ) begin
-            command_out.address <= request.stripe1;
+          command_out.command <= READ_CL_NA;
+          stripe_valid <= 0;
+          if (command_out.tag == REQUEST_READ |
+              command_out.tag == PARITY_WRITE) begin
+            command_out.address <= request.stripe1 + offset;
             command_out.tag <= STRIPE1_READ;
           end else begin
-            command_out.address <= request.stripe2;
+            command_out.address <= request.stripe2 + offset;
             command_out.tag <= STRIPE2_READ;
             current_state <= WAITING_FOR_STRIPES;
           end
@@ -143,12 +146,18 @@ module parity_workelement (
             end else begin
               buffer_out.read_data <= parity_data[512:1023];
             end
-            if (response.valid && response.tag == PARITY_WRITE)
-              current_state <= DONE;
+            if (response.valid && response.tag == PARITY_WRITE) begin
+              if(offset + 128 >= request.size) begin
+                current_state <= DONE;
+              end else begin
+                offset <= offset + 128;
+                current_state <= REQUEST_STRIPES;
+              end
+            end
           end else begin
             command_out.command <= WRITE_NA;
             command_out.size <= 128;
-            command_out.address <= request.parity;
+            command_out.address <= request.parity + offset;
             command_out.tag <= PARITY_WRITE;
             command_out.valid <= 1;
           end
